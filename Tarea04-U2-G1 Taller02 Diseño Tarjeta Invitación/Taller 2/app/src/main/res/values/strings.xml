@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Happy Birthday</string>
+    <string name="happy_birthday_text">ESTAS INVITADO A
+        MI FIESTA DE CUMPLEAÑOS </string>
+    <string name="signature_text">TE ESPERO...!</string>
+    <string name="share_with_others">Compartir</string>
+</resources>
