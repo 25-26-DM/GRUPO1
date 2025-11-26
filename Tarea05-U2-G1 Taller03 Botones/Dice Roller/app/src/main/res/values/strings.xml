@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Tirador de dados</string>
+
+    <string name="roll">Lanzar Dado</string>
+    <string name="dice_one">Uno</string>
+    <string name="dice_two">Dos</string>
+    <string name="dice_three">Tres</string>
+    <string name="dice_four">Cuatro</string>
+    <string name="dice_five">Cinco</string>
+    <string name="dice_six">Seis</string>
+</resources>

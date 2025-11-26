@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Lanceur de dés</string>
+
+    <string name="roll">Lancer le dé</string>
+    <string name="dice_one">Un</string>
+    <string name="dice_two">Deux</string>
+    <string name="dice_three">Trois</string>
+    <string name="dice_four">Quatre</string>
+    <string name="dice_five">Cinq</string>
+    <string name="dice_six">Six</string>
+</resources>

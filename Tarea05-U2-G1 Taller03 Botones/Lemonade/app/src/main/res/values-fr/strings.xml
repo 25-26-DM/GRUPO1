@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Limonade</string>
+
+    <!-- UI Text -->
+    <string name="tap_lemon_tree">Touchez l\'arbre à citron pour sélectionner un citron</string>
+    <string name="tap_lemon">Continuez à toucher le citron pour le presser</string>
+    <string name="tap_lemonade">Touchez la limonade pour la boire</string>
+    <string name="tap_empty_glass">Touchez le verre vide pour recommencer</string>
+
+    <!-- Accessibility -->
+    <string name="lemon_tree">Arbre à citron</string>
+    <string name="lemon">Citron</string>
+    <string name="glass_lemonade">Verre de limonade</string>
+    <string name="empty_glass">Verre vide</string>
+</resources>

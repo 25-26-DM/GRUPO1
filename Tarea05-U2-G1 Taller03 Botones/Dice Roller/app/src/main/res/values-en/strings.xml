@@ -1,0 +1,12 @@
+
+<resources>
+    <string name="app_name">Dice Roller</string>
+
+    <string name="roll">Roll Dice</string>
+    <string name="dice_one">One</string>
+    <string name="dice_two">Two</string>
+    <string name="dice_three">Three</string>
+    <string name="dice_four">Four</string>
+    <string name="dice_five">Five</string>
+    <string name="dice_six">Six</string>
+</resources>
