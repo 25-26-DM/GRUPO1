@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Gâteaux UCE</string>
+    <string name="order_cakes">Commander des Gâteaux</string>
+    <string name="one_cake">Un Gâteau</string>
+    <string name="six_cakes">Six Gâteaux</string>
+    <string name="twelve_cakes">Douze Gâteaux</string>
+    <string name="choose_flavor">Choisir le Parfum</string>
+    <string name="vanilla">Vanille</string>
+    <string name="chocolate">Chocolat</string>
+    <string name="red_velvet">Velours Rouge</string>
+    <string name="salted_caramel">Caramel Salé</string>
+    <string name="coffee">Café</string>
+    <string name="special_flavor">Parfum Spécial</string>
+    <string name="cancel">Annuler</string>
+    <string name="next">Suivant</string>
+    <string name="choose_pickup_date">Choisir la Date de Retrait</string>
+    <string name="order_summary">Résumé de la Commande</string>
+    <string name="send">Envoyer la Commande</string>
+    <string name="quantity">Quantité</string>
+    <string name="flavor">Parfum</string>
+    <string name="pickup_date">Date de Retrait</string>
+    <string name="subtotal_price">Sous-total %s</string>
+    <string name="total_price">Total %s</string>
+    <string name="new_cake_order">Nouvelle Commande de Gâteau</string>
+    <string name="order_details">Quantité: %1$s \nParfum: %2$s \nDate de Retrait: %3$s \nTotal: %4$s \n\nMerci!</string>
+    <string name="back_button">Retour</string>
+    <plurals name="cakes">
+        <item quantity="one">%d gâteau</item>
+        <item quantity="other">%d gâteaux</item>
+    </plurals>
+</resources>
