@@ -56,37 +56,44 @@ A continuación se muestra el diagrama de flujo que representa la lógica de nav
 
 ```mermaid
 graph TD
+    %% Definición de Nodos
+    Login(LoginScreen)
+    Register(RegisterScreen)
+    Home(HomeScreen)
+    LogoutDialog{¿Confirmar Cierre de Sesión?}
+    CreateProduct(ProductScreen - Modo Crear)
+    EditProduct(ProductScreen - Modo Editar)
+    DeleteDialog{¿Confirmar Eliminación?}
+
+    %% Flujo de Conexiones
     subgraph "Flujo de Autenticación"
-        direction LR
-        Login(LoginScreen) -->|Credenciales correctas ✅| Home;
-        Login -->|¿No tienes cuenta?| Register(RegisterScreen);
-        Register -->|Registro exitoso ✅| Login;
+        Login -->|¿No tienes cuenta?| Register
+        Register -->|Registro exitoso ✅| Login
+        Login -->|Credenciales correctas ✅| Home
     end
 
     subgraph "Flujo Principal de la App"
-        direction TD
-        Home(HomeScreen) -->|Clic en 'Cerrar Sesión'| LogoutDialog;
-        LogoutDialog{¿Confirmar Cierre de Sesión?} -- Sí --> Login;
-        LogoutDialog -- No --> Home;
+        Home -->|Clic en 'Cerrar Sesión'| LogoutDialog
+        LogoutDialog --o|No| Home
+        LogoutDialog -->|Sí| Login
 
-        Home -->|Clic en '+' (FAB)| CreateProduct(ProductScreen - Modo Crear);
-        CreateProduct -->|Guardar| Home;
+        Home -->|Clic en '+' (FAB)| CreateProduct
+        CreateProduct -->|Guardar| Home
 
-        Home -->|Clic en 'Editar'| EditProduct(ProductScreen - Modo Editar);
-        EditProduct -->|Guardar| Home;
+        Home -->|Clic en 'Editar'| EditProduct
+        EditProduct -->|Guardar| Home
 
-        Home -->|Clic en 'Eliminar'| DeleteDialog;
-        DeleteDialog{¿Confirmar Eliminación?} -- Sí --> Home;
-        DeleteDialog -- No --> Home;
+        Home -->|Clic en 'Eliminar'| DeleteDialog
+        DeleteDialog --o|No| Home
+        DeleteDialog -->|Sí| Home
     end
 
     %% Estilos
     classDef screen fill:#E3F2FD,stroke:#42A5F5,stroke-width:2px,color:#1E88E5
     classDef dialog fill:#FFF3E0,stroke:#FFB74D,stroke-width:2px,color:#FB8C00
-    classDef action fill:#E8F5E9,stroke:#66BB6A,stroke-width:2px,color:#388E3C
-
-    class Login,Register,Home,CreateProduct,EditProduct screen;
-    class LogoutDialog,DeleteDialog dialog;
+    
+    class Login,Register,Home,CreateProduct,EditProduct screen
+    class LogoutDialog,DeleteDialog dialog
 ```
 
 ## 🚀 Componentes Clave
