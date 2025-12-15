@@ -3,6 +3,7 @@ package ec.edu.uce.cupcake
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -145,8 +146,9 @@ fun CupcakeApp(
                         cancelOrderAndNavigateToStart(viewModel, navController)
                     },
                     onSendButtonClicked = { subject: String, summary: String ->
-                        viewModel.sendOrder()
                         shareOrder(context, subject = subject, summary = summary)
+                        Toast.makeText(context, R.string.order_sent_message, Toast.LENGTH_SHORT).show()
+                        cancelOrderAndNavigateToStart(viewModel, navController)
                     }
                 )
             }

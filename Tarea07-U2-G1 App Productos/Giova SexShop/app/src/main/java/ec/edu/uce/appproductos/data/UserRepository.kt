@@ -1,0 +1,26 @@
+package ec.edu.uce.appproductos.data
+
+import ec.edu.uce.appproductos.model.User
+
+object UserRepository {
+    private val users = listOf(
+        "Diego" to "Borja",
+        "Mateo" to "Jami",
+        "Jhon" to "Andino",
+        "Kevin" to "Cruz",
+        "Anthony" to "Cajamarca",
+        "Armando" to "Valle",
+        "Wulfer" to "Quiguango"
+    ).map { (nombre, apellido) -> User(nombre, apellido, "12345") }.toMutableList()
+
+    fun getUsers(): List<User> = users
+
+    fun addUser(user: User) {
+        users.add(user)
+    }
+
+    fun findUser(username: String, password: String): User? {
+        // The username is now a concatenation of name and lastname, e.g., "DiegoBorja"
+        return users.find { (it.nombre + it.apellido).equals(username, ignoreCase = true) && it.password == password }
+    }
+}

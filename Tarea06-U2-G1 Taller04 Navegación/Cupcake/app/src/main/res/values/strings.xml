@@ -24,6 +24,7 @@
     <string name="new_cake_order">Nuevo Pedido de Pastel #%1$s</string>
     <string name="order_details">Cantidad: %1$s \nSabor: %2$s \nFecha de Entrega: %3$s \nTotal: %4$s \n\n¡Gracias!</string>
     <string name="back_button">Atrás</string>
+    <string name="order_sent_message">¡Pedido enviado! Gracias por tu compra.</string>
     <plurals name="cakes">
         <item quantity="one">%d pastel</item>
         <item quantity="other">%d pasteles</item>

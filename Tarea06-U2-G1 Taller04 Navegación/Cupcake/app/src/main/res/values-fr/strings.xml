@@ -24,6 +24,7 @@
     <string name="new_cake_order">Nouvelle Commande de Gâteau</string>
     <string name="order_details">Quantité: %1$s \nParfum: %2$s \nDate de Retrait: %3$s \nTotal: %4$s \n\nMerci!</string>
     <string name="back_button">Retour</string>
+    <string name="order_sent_message">Commande envoyée! Merci pour votre achat.</string>
     <plurals name="cakes">
         <item quantity="one">%d gâteau</item>
         <item quantity="other">%d gâteaux</item>
