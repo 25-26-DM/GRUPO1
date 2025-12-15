@@ -4,7 +4,7 @@ Integrantes del Grupo 1
 
 | Integrantes         |
 | ------------------- |
-| **Andino Jhon**   |
+| **Andino John**   |
 | **Borja Diego**  |
 | **Cajamarca Anthony** |
 | **Cruz Kevin**      |

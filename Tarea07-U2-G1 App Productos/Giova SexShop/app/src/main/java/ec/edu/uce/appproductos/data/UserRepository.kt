@@ -6,7 +6,7 @@ object UserRepository {
     private val users = listOf(
         "Diego" to "Borja",
         "Mateo" to "Jami",
-        "Jhon" to "Andino",
+        "John" to "Andino",
         "Kevin" to "Cruz",
         "Anthony" to "Cajamarca",
         "Armando" to "Valle",
