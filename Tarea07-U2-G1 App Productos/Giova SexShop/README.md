@@ -73,17 +73,17 @@ graph TD
     end
 
     subgraph "Flujo Principal de la App"
-        Home -->|Clic en 'Cerrar Sesión'| LogoutDialog
+        Home -->|Clic en Cerrar Sesión| LogoutDialog
         LogoutDialog --o|No| Home
         LogoutDialog -->|Sí| Login
 
-        Home -->|Clic en '+' (FAB)| CreateProduct
+        Home -->|Clic en FAB para Crear| CreateProduct
         CreateProduct -->|Guardar| Home
 
-        Home -->|Clic en 'Editar'| EditProduct
+        Home -->|Clic en Editar| EditProduct
         EditProduct -->|Guardar| Home
 
-        Home -->|Clic en 'Eliminar'| DeleteDialog
+        Home -->|Clic en Eliminar| DeleteDialog
         DeleteDialog --o|No| Home
         DeleteDialog -->|Sí| Home
     end
