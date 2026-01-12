@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,12 +55,13 @@ data class Member(
 // Lista con los datos de los integrantes del grupo
 private val members = listOf(
     Member(firstName = "John", lastName = "Andino", birthDate = "19/12/2000", address = "Guamani", phone = "0959510327"),
-    Member(firstName = "Diego", lastName = "Borja", birthDate = "10/02/1998", address = "No disponible", phone = "No disponible"),
+    Member(firstName = "Diego", lastName = "Borja", birthDate = "10/02/1998", address = "Las Casas", phone = "0995711134"),
     Member(firstName = "Anthony", lastName = "Cajamarca", birthDate = "26/07/1999", address = "Ajavi", phone = "0963576870"),
     Member(firstName = "Kevin", lastName = "Cruz", birthDate = "01/04/1999", address = "La Forestal", phone = "0983187384"),
     Member(firstName = "Mateo", lastName = "Jami", birthDate = "27/03/2002", address = "Pedro José Davalos", phone = "0987775446"),
     Member(firstName = "Wulfer", lastName = "Quiguango", birthDate = "No disponible", address = "No disponible", phone = "No disponible"),
-    Member(firstName = "Armando", lastName = "Valle", birthDate = "21/07/2000", address = "San Bartolo", phone = "0982613168")
+    Member(firstName = "Armando", lastName = "Valle", birthDate = "21/07/2000", address = "San Bartolo", phone = "0982613168"),
+    Member("Perico", lastName = "Palotes", birthDate = "No disponible", address = "No disponible", phone = "No disponible")
 )
 
 class MainActivity : ComponentActivity() {
@@ -75,7 +77,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MyApp(modifier: Modifier = Modifier) {
-    var shouldShowOnboarding by rememberSaveable { mutableStateOf(true) }
+    var shouldShowOnboarding by remember { mutableStateOf(true) }
 
     Surface(modifier, color = MaterialTheme.colorScheme.background) {
         if (shouldShowOnboarding) {
