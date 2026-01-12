@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">aodViewer</string>
+    <string name="app_name_with_index">aodViewer (%1$d/%2$d)</string>
+
+    <string name="open_file">Open…</string>
+    <string name="info">Info</string>
+
+    <string name="open_file_button">Open File</string>
+
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="intro_message">
+        This sample demonstrates how to use PdfRenderer to display PDF documents on the screen.
+    </string>
+
+    <string name="open_call_to_action">Click "open" to view the contents of a PDF.</string>
+
+    <!-- Login Screen Strings -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_username_hint">Nombre de usuario</string>
+    <string name="login_password_hint">Contraseña</string>
+    <string name="login_button">Ingresar</string>
+    <string name="login_error_empty_fields">Por favor, complete todos los campos</string>
+    <string name="login_error_invalid_credentials">Usuario o contraseña incorrectos</string>
+    <string name="login_welcome">Bienvenido, %s</string>
+    <string name="logout">Cerrar Sesión</string>
+</resources>
