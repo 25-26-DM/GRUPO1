@@ -1,4 +1,4 @@
-package ec.edu.uce.appproductos.ui.camera
+package ec.edu.uce.appproductosfinal.ui.camera
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -50,6 +50,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import ec.edu.uce.appproductosfinal.R
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -184,7 +185,6 @@ fun CameraScreen(onBack: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Botón Galería Funcional
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -205,7 +205,6 @@ fun CameraScreen(onBack: () -> Unit) {
                         Icon(Icons.Rounded.PhotoLibrary, null, tint = Color.White)
                     }
 
-                    // Shutter Button (Principal)
                     CaptureButton(
                         isRecording = isRecording,
                         onPress = {
