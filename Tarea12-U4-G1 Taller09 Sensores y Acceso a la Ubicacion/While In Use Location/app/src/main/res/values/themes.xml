@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="Theme.AppProductos" parent="Theme.Material3.Light.NoActionBar">
-        <!-- Agregado para forzar la desactivación del modo oscuro en toda la app -->
-        <item name="android:forceDarkAllowed">false</item>
-    </style>
-</resources>
