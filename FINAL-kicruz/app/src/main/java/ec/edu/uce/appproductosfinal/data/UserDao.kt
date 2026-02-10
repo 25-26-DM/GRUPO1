@@ -15,4 +15,7 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE LOWER(nombre) = LOWER(:username) AND password = :password LIMIT 1")
     suspend fun findUser(username: String, password: String): User?
+
+    @Query("UPDATE users SET lastLogin = :date WHERE nombre = :username")
+    suspend fun updateLastLogin(username: String, date: String)
 }

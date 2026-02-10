@@ -9,5 +9,6 @@ data class User(
     val nombre: String,
     val apellido: String,
     val password: String, // Hash SHA-256
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val lastLogin: String? = null
 )

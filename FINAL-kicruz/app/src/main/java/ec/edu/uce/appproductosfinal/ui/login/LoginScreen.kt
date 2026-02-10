@@ -24,11 +24,13 @@ import ec.edu.uce.appproductosfinal.data.UserRepository
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.utils.SecurityUtils
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun LoginScreen(
     userRepository: UserRepository,
-    onLoginSuccess: (String) -> Unit, 
+    onLoginSuccess: (String, String) -> Unit, // Cambiado para pasar nombre y último login
     onNavigateToRegister: () -> Unit,
     showSuccessMessage: Boolean
 ) {
@@ -72,6 +74,7 @@ fun LoginScreen(
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -93,7 +96,7 @@ fun LoginScreen(
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             if (isChecking) {
                 CircularProgressIndicator()
             } else {
@@ -103,21 +106,33 @@ fun LoginScreen(
                             isChecking = true
                             showError = false
                             val hashedPassword = SecurityUtils.hashPassword(password)
+
+                            // 1. Intentar buscar usuario localmente
                             val localUser = userRepository.findUser(nombre, hashedPassword)
-                            
-                            if (localUser != null) {
-                                onLoginSuccess(localUser.nombre)
+
+                            val finalUser = localUser ?: try {
+                                // 2. Si no está local, buscar en API
+                                val response = RetrofitClient.instance.getUser(nombre)
+                                if (response.isSuccessful && response.body()?.password == hashedPassword) {
+                                    response.body()?.also { userRepository.addUser(it) }
+                                } else null
+                            } catch (e: Exception) { null }
+
+                            if (finalUser != null) {
+                                // 3. Lógica de Fecha: Obtener la actual para la DB
+                                val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+                                val now = sdf.format(Date())
+
+                                // El "Último acceso" es lo que ya estaba guardado antes de esta sesión
+                                val displayLastLogin = finalUser.lastLogin ?: "Primer ingreso"
+
+                                // 4. Actualizar la base de datos con la nueva fecha
+                                userRepository.updateLastLogin(finalUser.nombre, now)
+
+                                // 5. Éxito: Pasamos el nombre y la fecha que debe mostrar el Header
+                                onLoginSuccess(finalUser.nombre, displayLastLogin)
                             } else {
-                                try {
-                                    val response = RetrofitClient.instance.getUser(nombre)
-                                    if (response.isSuccessful && response.body() != null) {
-                                        val cloudUser = response.body()!!
-                                        if (cloudUser.password == hashedPassword) {
-                                            userRepository.addUser(cloudUser)
-                                            onLoginSuccess(cloudUser.nombre)
-                                        } else { showError = true }
-                                    } else { showError = true }
-                                } catch (e: Exception) { showError = true }
+                                showError = true
                             }
                             isChecking = false
                         }
@@ -132,7 +147,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Credenciales inválidas", color = MaterialTheme.colorScheme.error)
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(onClick = onNavigateToRegister, enabled = !isChecking) {
                 Text("¿No tienes cuenta? Regístrate aquí")

@@ -42,6 +42,7 @@ import java.util.*
 @Composable
 fun HomeScreen(
     userName: String,
+    lastLogin: String,
     productRepository: ProductRepository,
     onLogout: () -> Unit,
     onAddProduct: () -> Unit,
@@ -53,17 +54,16 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     val products by productRepository.getProductsFlow().collectAsState(initial = emptyList())
     var isRefreshing by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var productToDelete by remember { mutableStateOf<Product?>(null) }
     var isDeleting by remember { mutableStateOf(false) }
-    
+
     val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("es", "EC")) }
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
-    // SALUDO DINÁMICO (RESTAURADO)
     val greeting = remember {
         val calendar = Calendar.getInstance()
         when (calendar.get(Calendar.HOUR_OF_DAY)) {
@@ -94,12 +94,12 @@ fun HomeScreen(
                         }
                     }
                 }
-                
+
                 val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                     .build()
                 WorkManager.getInstance(context).enqueue(syncRequest)
-                
+
             } catch (e: Exception) { }
             finally { isRefreshing = false }
         }
@@ -119,6 +119,21 @@ fun HomeScreen(
                     Column {
                         Text(greeting, style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.8f))
                         Text(userName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+
+                        Surface(
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.padding(top = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.History, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Último acceso: $lastLogin", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                            }
+                        }
                     }
                     IconButton(onClick = onLogout, modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)) {
                         Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.White)
@@ -135,7 +150,7 @@ fun HomeScreen(
         PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = { refreshData() }, modifier = Modifier.padding(padding).fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
                 SummaryHeader(products.size, products.sumOf { it.costo }, currencyFormat)
-                
+
                 if (products.isEmpty() && !isRefreshing) {
                     EmptyState()
                 } else {
@@ -149,7 +164,6 @@ fun HomeScreen(
                     }
                 }
             }
-            
             if (isDeleting) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -171,10 +185,7 @@ fun HomeScreen(
                             isDeleting = true
                             productToDelete?.let { prod ->
                                 try {
-                                    val response = withContext(Dispatchers.IO) {
-                                        RetrofitClient.instance.deleteProduct(prod.id)
-                                    }
-                                    
+                                    val response = withContext(Dispatchers.IO) { RetrofitClient.instance.deleteProduct(prod.id) }
                                     if (response.isSuccessful) {
                                         productRepository.deleteProduct(prod.id)
                                         Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
@@ -190,16 +201,16 @@ fun HomeScreen(
                             isDeleting = false
                             showDeleteDialog = false
                         }
-                    }, 
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text("Eliminar") }
             },
-            dismissButton = { 
-                TextButton(enabled = !isDeleting, onClick = { showDeleteDialog = false }) { Text("Cancelar") } 
-            }
+            dismissButton = { TextButton(enabled = !isDeleting, onClick = { showDeleteDialog = false }) { Text("Cancelar") } }
         )
     }
 }
+
+// --- FUNCIONES COMPLEMENTARIAS ---
 
 @Composable
 fun SummaryHeader(count: Int, total: Double, format: NumberFormat) {
@@ -224,12 +235,7 @@ fun ModernProductCard(product: Product, currencyFormat: NumberFormat, dateFormat
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                 if (!product.imageUri.isNullOrEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(product.imageUri), 
-                        contentDescription = null, 
-                        modifier = Modifier.fillMaxSize(), 
-                        contentScale = ContentScale.Crop
-                    )
+                    Image(painter = rememberAsyncImagePainter(product.imageUri), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 } else {
                     Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
