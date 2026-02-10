@@ -10,6 +10,10 @@ interface ApiService {
     @POST("producto")
     suspend fun syncProduct(@Body product: ProductDto): Response<SyncResponse>
 
+    // REQUERIMIENTO EXAMEN: Insertar y notificar por correo
+    @POST("msginsert")
+    suspend fun insertAndNotify(@Body product: ProductDto): Response<SyncResponse>
+
     @GET("producto")
     suspend fun getAllProducts(): Response<List<Product>>
 

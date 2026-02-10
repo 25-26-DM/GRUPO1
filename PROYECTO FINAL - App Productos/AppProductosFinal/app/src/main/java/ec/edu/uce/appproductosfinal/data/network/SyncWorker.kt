@@ -34,7 +34,15 @@ class SyncWorker(
             for (product in localProducts) {
                 try {
                     val productDto = product.toDto(applicationContext)
-                    val response = RetrofitClient.instance.syncProduct(productDto)
+                    
+                    // REQUERIMIENTO PROFESOR: Usar msginsert para notificar por correo al insertar
+                    // Si el producto no tiene URL remota (es nuevo en la nube), usamos msginsert
+                    val response = if (product.imageUri?.startsWith("http") != true) {
+                        RetrofitClient.instance.insertAndNotify(productDto)
+                    } else {
+                        RetrofitClient.instance.syncProduct(productDto)
+                    }
+
                     if (response.isSuccessful) {
                         val body = response.body()
                         if (body?.url != null && body.url.startsWith("http")) {
@@ -87,7 +95,6 @@ class SyncWorker(
                 val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
                 var bitmap = BitmapFactory.decodeStream(inputStream)
                 
-                // OPTIMIZACIÓN JEFF DEAN: Redimensionar para ahorrar bits y RAM
                 bitmap = resizeBitmap(bitmap, 1024)
                 
                 val outputStream = ByteArrayOutputStream()
@@ -106,10 +113,8 @@ class SyncWorker(
         val width = bitmap.width
         val height = bitmap.height
         val ratio = width.toFloat() / height.toFloat()
-        
         var finalWidth = width
         var finalHeight = height
-
         if (ratio > 1) {
             if (width > maxSize) {
                 finalWidth = maxSize
