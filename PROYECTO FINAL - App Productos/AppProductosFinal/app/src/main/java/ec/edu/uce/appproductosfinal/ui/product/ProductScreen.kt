@@ -126,7 +126,12 @@ fun ProductScreen(
         topBar = {
             TopAppBar(
                 title = { Text(if (productId == null) "Nuevo Producto" else "Editar Producto", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary, titleContentColor = MaterialTheme.colorScheme.onPrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary, titleContentColor = MaterialTheme.colorScheme.onPrimary),
+                navigationIcon = {
+                    IconButton(onClick = onSave) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+                    }
+                }
             )
         }
     ) { padding ->
@@ -214,20 +219,31 @@ fun ProductScreen(
                                 lastUpdated = System.currentTimeMillis()
                             )
                             
-                            if (productId == null) {
-                                productRepository.addProduct(tempProduct)
-                            } else {
-                                productRepository.updateProduct(tempProduct)
+                            // CORRECCIÓN JEFF DEAN: Capturar el guardado real antes de disparar el Worker
+                            try {
+                                if (productId == null) {
+                                    productRepository.addProduct(tempProduct)
+                                } else {
+                                    productRepository.updateProduct(tempProduct)
+                                }
+
+                                // Disparamos la sincronización. Quitamos la restricción CONNECTED para que el Worker
+                                // se ejecute localmente al menos una vez y nos dé logs si algo falla.
+                                val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, java.util.concurrent.TimeUnit.SECONDS)
+                                    .build()
+                                
+                                WorkManager.getInstance(context).enqueueUniqueWork(
+                                    "sync_products",
+                                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                                    syncRequest
+                                )
+
+                                Toast.makeText(context, "Producto guardado localmente", Toast.LENGTH_SHORT).show()
+                                onSave()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
                             }
-
-                            val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-                                .setConstraints(Constraints.Builder()
-                                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                                    .build())
-                                .build()
-                            WorkManager.getInstance(context).enqueue(syncRequest)
-
-                            onSave()
                         }
                     },
                     enabled = isFormValid,

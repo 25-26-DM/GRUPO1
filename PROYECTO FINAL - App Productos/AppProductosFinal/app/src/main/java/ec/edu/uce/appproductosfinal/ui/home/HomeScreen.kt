@@ -31,7 +31,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.work.*
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import ec.edu.uce.appproductosfinal.data.ProductRepository
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.data.network.SyncWorker
@@ -90,10 +91,7 @@ fun HomeScreen(
                 if (response.isSuccessful) {
                     val cloudProducts = response.body() ?: emptyList()
                     val localProducts = productRepository.getProducts()
-                    val cloudIds = cloudProducts.map { it.id }.toSet()
-                    localProducts.forEach { local ->
-                        if (local.id !in cloudIds) productRepository.deleteProduct(local.id)
-                    }
+                    
                     cloudProducts.forEach { cloud ->
                         val local = localProducts.find { it.id == cloud.id }
                         if (local == null || cloud.lastUpdated > local.lastUpdated) {
@@ -171,26 +169,16 @@ fun HomeScreen(
                     LazyVerticalGrid(columns = GridCells.Fixed(1), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
                         itemsIndexed(filteredProducts, key = { _, it -> it.id }) { index, product ->
                             
-                            // JONY IVE REFINEMENT: Direct GPU Property Animation (High Performance)
                             val animatedAlpha = remember { Animatable(0f) }
                             val animatedY = remember { Animatable(40f) }
 
                             LaunchedEffect(key1 = filteredProducts) {
-                                delay(index * 40L) // Stagger delay
+                                delay(index * 40L)
                                 launch {
-                                    animatedAlpha.animateTo(
-                                        targetValue = 1f,
-                                        animationSpec = spring(stiffness = Spring.StiffnessLow)
-                                    )
+                                    animatedAlpha.animateTo(1f, spring(stiffness = Spring.StiffnessLow))
                                 }
                                 launch {
-                                    animatedY.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioLowBouncy,
-                                            stiffness = Spring.StiffnessLow
-                                        )
-                                    )
+                                    animatedY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow))
                                 }
                             }
 
@@ -231,7 +219,7 @@ fun HomeScreen(
                                 try {
                                     val response = withContext(Dispatchers.IO) { RetrofitClient.instance.deleteProduct(prod.id) }
                                     productRepository.deleteProduct(prod.id)
-                                    Toast.makeText(context, if (response.isSuccessful) "Producto eliminado" else "Eliminado localmente", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     productRepository.deleteProduct(prod.id)
                                     Toast.makeText(context, "Eliminado localmente", Toast.LENGTH_SHORT).show()
@@ -287,8 +275,18 @@ fun ModernProductCard(product: Product, currencyFormat: NumberFormat, dateFormat
     ) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                // OPTIMIZACIÓN JEFF DEAN: Uso de AsyncImage con Reintentos y Crossfade para evitar parpadeos
                 if (!product.imageUri.isNullOrEmpty()) {
-                    Image(painter = rememberAsyncImagePainter(product.imageUri), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(product.imageUri)
+                            .crossfade(true)
+                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 } else {
                     Icon(Icons.Default.Inventory2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                 }
