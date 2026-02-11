@@ -12,4 +12,10 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun findUser(username: String, password: String): User? {
         return userDao.findUser(username, password)
     }
+
+    suspend fun updateLastLogin(username: String, date: String) {
+        userDao.updateLastLogin(username, date)
+    }
+
+
 }
