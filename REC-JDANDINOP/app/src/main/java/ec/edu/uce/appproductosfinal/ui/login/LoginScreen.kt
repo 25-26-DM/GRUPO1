@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import ec.edu.uce.appproductosfinal.R
 import ec.edu.uce.appproductosfinal.data.UserRepository
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
+import ec.edu.uce.appproductosfinal.utils.LogManager
 import ec.edu.uce.appproductosfinal.utils.SecurityUtils
 import kotlinx.coroutines.launch
 
@@ -56,6 +57,8 @@ fun LoginScreen(
                 modifier = Modifier.size(200.dp)
             )
             Spacer(modifier = Modifier.height(32.dp))
+            
+            val context = androidx.compose.ui.platform.LocalContext.current
 
             OutlinedTextField(
                 value = nombre,
@@ -106,6 +109,7 @@ fun LoginScreen(
                             val localUser = userRepository.findUser(nombre, hashedPassword)
                             
                             if (localUser != null) {
+                                LogManager.registrarLog(context, "ingreso", localUser.nombre)
                                 onLoginSuccess(localUser.nombre)
                             } else {
                                 try {
@@ -114,6 +118,7 @@ fun LoginScreen(
                                         val cloudUser = response.body()!!
                                         if (cloudUser.password == hashedPassword) {
                                             userRepository.addUser(cloudUser)
+                                            LogManager.registrarLog(context, "ingreso", cloudUser.nombre)
                                             onLoginSuccess(cloudUser.nombre)
                                         } else { showError = true }
                                     } else { showError = true }

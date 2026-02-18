@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AppNavigation() {

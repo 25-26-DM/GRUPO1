@@ -31,6 +31,7 @@ import ec.edu.uce.appproductosfinal.data.ProductRepository
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.data.network.SyncWorker
 import ec.edu.uce.appproductosfinal.model.Product
+import ec.edu.uce.appproductosfinal.utils.LogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -177,6 +178,7 @@ fun HomeScreen(
                                     
                                     if (response.isSuccessful) {
                                         productRepository.deleteProduct(prod.id)
+                                        LogManager.registrarLog(context, "eliminacion", userName)
                                         Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
                                     } else {
                                         productRepository.deleteProduct(prod.id)

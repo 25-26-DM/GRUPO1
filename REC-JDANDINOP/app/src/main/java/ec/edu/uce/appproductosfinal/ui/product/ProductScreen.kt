@@ -45,6 +45,8 @@ import ec.edu.uce.appproductosfinal.data.ProductRepository
 import ec.edu.uce.appproductosfinal.data.network.ProductDto
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.model.Product
+import ec.edu.uce.appproductosfinal.location.SharedPreferenceUtil
+import ec.edu.uce.appproductosfinal.utils.LogManager
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -222,6 +224,11 @@ fun ProductScreen(
                             )
                             val finalId = if (productId == null) productRepository.addProduct(tempProduct).toInt() 
                                           else { productRepository.updateProduct(tempProduct); productId }
+                            
+                            val currentUser = SharedPreferenceUtil.getUserSession(context) ?: "Unknown"
+                            val accion = if (productId == null) "creacion" else "actualizacion"
+                            LogManager.registrarLog(context, accion, currentUser)
+
                             val finalProduct = tempProduct.copy(id = finalId)
                             try {
                                 val productDto = finalProduct.toDto(context)
