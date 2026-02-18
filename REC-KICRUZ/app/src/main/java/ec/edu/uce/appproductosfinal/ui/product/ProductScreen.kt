@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,20 +68,28 @@ fun ProductScreen(
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    // Guardamos la referencia al archivo actual para persistir su URI real
+    var currentPhotoFile by remember { mutableStateOf<File?>(null) }
     
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
-    ) { success -> if (success) imageUri = tempUri?.toString() }
+    ) { success -> 
+        if (success && currentPhotoFile != null) {
+            // Guardamos la URI del archivo físico, no la del FileProvider (que es temporal)
+            imageUri = Uri.fromFile(currentPhotoFile).toString()
+            Log.d("ProductScreen", "Foto capturada y guardada en: $imageUri")
+        } 
+    }
 
     val openCamera = {
         try {
             val directory = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "images")
             if (!directory.exists()) directory.mkdirs()
             val file = File(directory, "IMG_${System.currentTimeMillis()}.jpg")
+            currentPhotoFile = file
+            
             val authority = "ec.edu.uce.appproductosfinal.fileprovider"
             val uri = FileProvider.getUriForFile(context, authority, file)
-            tempUri = uri
             cameraLauncher.launch(uri)
         } catch (e: Exception) {
             Toast.makeText(context, "Error cámara: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -219,7 +228,6 @@ fun ProductScreen(
                                 lastUpdated = System.currentTimeMillis()
                             )
                             
-                            // CORRECCIÓN JEFF DEAN: Capturar el guardado real antes de disparar el Worker
                             try {
                                 if (productId == null) {
                                     productRepository.addProduct(tempProduct)
@@ -227,19 +235,18 @@ fun ProductScreen(
                                     productRepository.updateProduct(tempProduct)
                                 }
 
-                                // Disparamos la sincronización. Quitamos la restricción CONNECTED para que el Worker
-                                // se ejecute localmente al menos una vez y nos dé logs si algo falla.
+                                // Disparamos la sincronización inmediata
                                 val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
                                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, java.util.concurrent.TimeUnit.SECONDS)
                                     .build()
                                 
                                 WorkManager.getInstance(context).enqueueUniqueWork(
                                     "sync_products",
-                                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                                    ExistingWorkPolicy.REPLACE, // Reemplazamos para que intente sincronizar todo lo pendiente
                                     syncRequest
                                 )
 
-                                Toast.makeText(context, "Producto guardado localmente", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Producto guardado. Sincronizando...", Toast.LENGTH_SHORT).show()
                                 onSave()
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
