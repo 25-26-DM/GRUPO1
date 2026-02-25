@@ -44,6 +44,7 @@ import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import ec.edu.uce.appproductosfinal.data.ProductRepository
 import ec.edu.uce.appproductosfinal.data.network.EmailRequest
+import ec.edu.uce.appproductosfinal.data.network.LogRequest
 import ec.edu.uce.appproductosfinal.data.network.ProductDto
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.model.Product
@@ -261,6 +262,17 @@ fun ProductScreen(
                                     Toast.makeText(context, "Error al enviar correo: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
+
+                            val tipoLog = if (isNewProduct) "creacion" else "actualizacion"
+                            try {
+                                RetrofitClient.instance.registerLog(
+                                    LogRequest(
+                                        id = System.currentTimeMillis(),
+                                        tipo = tipoLog,
+                                        detalle = "origen=app; productoId=$finalId; descripcion=$descripcion"
+                                    )
+                                )
+                            } catch (_: Exception) { }
                             
                             onSave()
                         }

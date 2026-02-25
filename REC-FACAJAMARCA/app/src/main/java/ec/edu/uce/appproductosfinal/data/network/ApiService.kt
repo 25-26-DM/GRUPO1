@@ -1,7 +1,6 @@
 package ec.edu.uce.appproductosfinal.data.network
 
-import ec.edu.uce.appproductosfinal.model.Product
-import ec.edu.uce.appproductosfinal.model.User
+import ec.edu.uce.appproductosfinal.model.*
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -23,9 +22,20 @@ interface ApiService {
     @GET("usuario")
     suspend fun getUser(@Query("nombre") nombre: String): Response<User?>
 
+    // --- LOGIN CON TOKEN (NUEVO) ---
+    @POST("logintokenrec")
+    suspend fun requestLoginToken(@Body request: LoginTokenRequest): Response<LoginTokenResponse>
+
+    @POST("verificartoken")
+    suspend fun verifyLoginToken(@Body request: TokenVerificationRequest): Response<TokenVerificationResponse>
+
     // --- ENVÍO DE CORREO ---
     @POST("mailinsertrec")
     suspend fun sendProductEmail(@Body emailRequest: EmailRequest): Response<EmailResponse>
+
+    // --- REGISTRO DE LOGS ---
+    @POST("reglog")
+    suspend fun registerLog(@Body request: LogRequest): Response<LogResponse>
 }
 
 data class SyncResponse(val message: String, val url: String?)
@@ -41,3 +51,11 @@ data class EmailRequest(
 )
 
 data class EmailResponse(val message: String)
+
+data class LogRequest(
+    val id: Long,
+    val tipo: String,
+    val detalle: String
+)
+
+data class LogResponse(val message: String)

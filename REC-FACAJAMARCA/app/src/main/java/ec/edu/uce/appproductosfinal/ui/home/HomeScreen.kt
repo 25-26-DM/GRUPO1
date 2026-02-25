@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.work.*
 import coil.compose.rememberAsyncImagePainter
 import ec.edu.uce.appproductosfinal.data.ProductRepository
+import ec.edu.uce.appproductosfinal.data.network.LogRequest
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.data.network.SyncWorker
 import ec.edu.uce.appproductosfinal.model.Product
@@ -186,6 +187,15 @@ fun HomeScreen(
                                     productRepository.deleteProduct(prod.id)
                                     Toast.makeText(context, "Eliminado localmente", Toast.LENGTH_SHORT).show()
                                 }
+                                try {
+                                    RetrofitClient.instance.registerLog(
+                                        LogRequest(
+                                            id = System.currentTimeMillis(),
+                                            tipo = "eliminacion",
+                                            detalle = "origen=app; productoId=${prod.id}; descripcion=${prod.descripcion}"
+                                        )
+                                    )
+                                } catch (_: Exception) { }
                             }
                             isDeleting = false
                             showDeleteDialog = false
