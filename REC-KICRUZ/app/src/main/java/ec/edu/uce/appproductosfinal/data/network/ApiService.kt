@@ -26,6 +26,10 @@ interface ApiService {
 
     @GET("usuario")
     suspend fun getUser(@Query("nombre") nombre: String): Response<User?>
+
+    // NUEVO: Endpoint para auditoría
+    @POST("logrec")
+    suspend fun registrarLog(@Body log: LogDto): Response<Map<String, String>>
 }
 
 data class SyncResponse(val message: String, val url: String?)

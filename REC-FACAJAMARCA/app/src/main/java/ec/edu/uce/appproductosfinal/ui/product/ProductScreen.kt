@@ -1,6 +1,7 @@
 package ec.edu.uce.appproductosfinal.ui.product
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -42,6 +43,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import ec.edu.uce.appproductosfinal.data.ProductRepository
+import ec.edu.uce.appproductosfinal.data.network.EmailRequest
 import ec.edu.uce.appproductosfinal.data.network.ProductDto
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.model.Product
@@ -52,6 +54,7 @@ import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductScreen(
@@ -220,13 +223,45 @@ fun ProductScreen(
                                 imageUri = imageUri,
                                 lastUpdated = System.currentTimeMillis()
                             )
-                            val finalId = if (productId == null) productRepository.addProduct(tempProduct).toInt() 
+                            val isNewProduct = productId == null
+                            val finalId = if (isNewProduct) productRepository.addProduct(tempProduct).toInt() 
                                           else { productRepository.updateProduct(tempProduct); productId }
                             val finalProduct = tempProduct.copy(id = finalId)
+                            
+                            var syncedImageUri: String? = finalProduct.imageUri
                             try {
                                 val productDto = finalProduct.toDto(context)
-                                RetrofitClient.instance.syncProduct(productDto)
-                            } catch (e: Exception) { }
+                                val syncResponse = RetrofitClient.instance.syncProduct(productDto)
+                                if (syncResponse.isSuccessful) {
+                                    syncedImageUri = syncResponse.body()?.url ?: syncedImageUri
+                                }
+                            } catch (e: Exception) {
+                                Log.e("ProductScreen", "Error sync: ${e.message}")
+                            }
+                            
+                            // Enviar correo solo al insertar un nuevo producto
+                            if (isNewProduct) {
+                                try {
+                                    val emailRequest = EmailRequest(
+                                        id = finalId,
+                                        descripcion = descripcion,
+                                        fechaFabricacion = fechaFabricacionMillis,
+                                        costo = costo.toDoubleOrNull() ?: 0.0,
+                                        disponibilidad = disponibilidad,
+                                        imageUri = syncedImageUri
+                                    )
+                                    val emailResponse = RetrofitClient.instance.sendProductEmail(emailRequest)
+                                    if (emailResponse.isSuccessful) {
+                                        Toast.makeText(context, "Correo enviado exitosamente", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Error al enviar correo: ${emailResponse.code()}", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("ProductScreen", "Error email: ${e.message}")
+                                    Toast.makeText(context, "Error al enviar correo: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            
                             onSave()
                         }
                     },

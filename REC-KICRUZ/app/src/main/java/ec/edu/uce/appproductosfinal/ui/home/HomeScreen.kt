@@ -52,7 +52,8 @@ fun HomeScreen(
     productRepository: ProductRepository,
     onLogout: () -> Unit,
     onAddProduct: () -> Unit,
-    onEditProduct: (Product) -> Unit
+    onEditProduct: (Product) -> Unit,
+    onDeleteAction: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -217,11 +218,13 @@ fun HomeScreen(
                             isDeleting = true
                             productToDelete?.let { prod ->
                                 try {
-                                    val response = withContext(Dispatchers.IO) { RetrofitClient.instance.deleteProduct(prod.id) }
+                                    withContext(Dispatchers.IO) { RetrofitClient.instance.deleteProduct(prod.id) }
                                     productRepository.deleteProduct(prod.id)
+                                    onDeleteAction(prod.id)
                                     Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     productRepository.deleteProduct(prod.id)
+                                    onDeleteAction(prod.id)
                                     Toast.makeText(context, "Eliminado localmente", Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -275,7 +278,6 @@ fun ModernProductCard(product: Product, currencyFormat: NumberFormat, dateFormat
     ) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
-                // OPTIMIZACIÓN JEFF DEAN: Uso de AsyncImage con Reintentos y Crossfade para evitar parpadeos
                 if (!product.imageUri.isNullOrEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)

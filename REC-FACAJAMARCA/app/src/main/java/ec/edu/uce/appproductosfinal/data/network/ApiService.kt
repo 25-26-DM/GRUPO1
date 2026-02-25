@@ -22,6 +22,22 @@ interface ApiService {
 
     @GET("usuario")
     suspend fun getUser(@Query("nombre") nombre: String): Response<User?>
+
+    // --- ENVÍO DE CORREO ---
+    @POST("mailinsertrec")
+    suspend fun sendProductEmail(@Body emailRequest: EmailRequest): Response<EmailResponse>
 }
 
 data class SyncResponse(val message: String, val url: String?)
+
+data class EmailRequest(
+    val id: Int,
+    val descripcion: String,
+    val fechaFabricacion: Long,
+    val costo: Double,
+    val disponibilidad: Boolean,
+    val imageUri: String?,
+    val correoDestino: String = "lossininternetapp@gmail.com"
+)
+
+data class EmailResponse(val message: String)

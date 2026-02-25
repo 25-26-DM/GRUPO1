@@ -33,7 +33,7 @@ class SyncWorker(
             var syncCount = 0
             
             for (product in localProducts) {
-                // Si el producto ya está marcado como sincronizado (empieza con http), lo saltamos
+                // Si el producto ya tiene un link de S3 (empieza con http), lo saltamos
                 if (product.imageUri?.startsWith("http") == true) continue
 
                 try {
@@ -43,27 +43,28 @@ class SyncWorker(
                     if (response.isSuccessful) {
                         val responseBody = response.body()
                         
-                        // JEFF DEAN OPTIMIZATION: 
-                        // Si el servidor no manda URL (porque no hay foto), ponemos una marca de éxito
-                        // para que el Check Verde aparezca en la App.
+                        // Si el servidor retorna la URL de S3, la guardamos localmente
                         val cloudUrl = if (!responseBody?.url.isNullOrEmpty()) {
                             responseBody!!.url
                         } else {
-                            "http://cloud.sync/success/${product.id}" // Marca virtual de sincronización
+                            "http://cloud.sync/success/${product.id}"
                         }
 
                         repository.updateProduct(product.copy(imageUri = cloudUrl))
                         syncCount++
-                        Log.d("SyncWorker", "Producto ${product.id} sincronizado exitosamente")
+                        Log.d("SyncWorker", "Producto ${product.id} sincronizado: $cloudUrl")
+                    } else {
+                        Log.e("SyncWorker", "Error servidor en ID ${product.id}: ${response.code()}")
                     }
                 } catch (e: Exception) {
-                    Log.e("SyncWorker", "Error de red en ID ${product.id}", e)
+                    Log.e("SyncWorker", "Error de red en ID ${product.id}: ${e.message}")
                 }
             }
 
             if (syncCount > 0) showNotification(repository.getProducts().size)
             Result.success()
         } catch (e: Exception) {
+            Log.e("SyncWorker", "Error fatal en worker", e)
             Result.retry()
         }
     }
@@ -89,14 +90,31 @@ class SyncWorker(
             try {
                 val uri = Uri.parse(imageUri)
                 val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                if (bitmap != null) {
-                    val resized = Bitmap.createScaledBitmap(bitmap, 1024, (1024 * (bitmap.height.toFloat() / bitmap.width)).toInt(), true)
-                    val outputStream = ByteArrayOutputStream()
-                    resized.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-                    base64 = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+                if (inputStream != null) {
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream.close()
+                    
+                    if (bitmap != null) {
+                        // Redimensionar para no exceder límites de AWS (800px ancho)
+                        val width = 800
+                        val height = (width * (bitmap.height.toFloat() / bitmap.width)).toInt()
+                        val resized = Bitmap.createScaledBitmap(bitmap, width, height, true)
+                        
+                        val outputStream = ByteArrayOutputStream()
+                        resized.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
+                        
+                        // Convertir a Base64 sin saltos de línea
+                        base64 = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+                        Log.d("SyncWorker", "Imagen convertida a Base64 (${base64.length} chars)")
+                    } else {
+                        Log.e("SyncWorker", "No se pudo decodificar el bitmap de $imageUri")
+                    }
+                } else {
+                    Log.e("SyncWorker", "No se pudo abrir stream para $imageUri")
                 }
-            } catch (e: Exception) { }
+            } catch (e: Exception) {
+                Log.e("SyncWorker", "Error en procesamiento de imagen", e)
+            }
         }
         return ProductDto(id, descripcion, fechaFabricacion, costo, disponibilidad, imageUri, lastUpdated, base64)
     }
