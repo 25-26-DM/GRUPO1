@@ -26,6 +26,7 @@ import ec.edu.uce.appproductosfinal.data.UserRepository
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.model.User
 import ec.edu.uce.appproductosfinal.utils.SecurityUtils
+import ec.edu.uce.appproductosfinal.utils.LogManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,7 +37,7 @@ fun RegisterScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
-    
+
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -44,6 +45,7 @@ fun RegisterScreen(
     var passwordVisibility by remember { mutableStateOf(false) }
     var isRegistering by remember { mutableStateOf(false) }
 
+    // Validación básica del formulario
     val isFormValid by derivedStateOf {
         nombre.isNotBlank() && apellido.isNotBlank() && password.isNotBlank() && password == confirmPassword
     }
@@ -58,19 +60,20 @@ fun RegisterScreen(
         Text("Crear Nueva Cuenta", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
+        // INPUTS DE TEXTO
         OutlinedTextField(
-            value = nombre, 
-            onValueChange = { nombre = it }, 
-            label = { Text("Nombre/Usuario") }, 
+            value = nombre,
+            onValueChange = { nombre = it },
+            label = { Text("Nombre/Usuario") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = apellido, 
-            onValueChange = { apellido = it }, 
-            label = { Text("Apellido") }, 
+            value = apellido,
+            onValueChange = { apellido = it },
+            label = { Text("Apellido") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
@@ -92,17 +95,18 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = confirmPassword, 
-            onValueChange = { confirmPassword = it }, 
-            label = { Text("Confirmar") }, 
-            modifier = Modifier.fillMaxWidth(), 
-            visualTransformation = PasswordVisualTransformation(), 
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirmar") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
+        // LOGICA DE REGISTRO
         if (isRegistering) {
             CircularProgressIndicator()
         } else {
@@ -112,16 +116,26 @@ fun RegisterScreen(
                         isRegistering = true
                         val hashedPassword = SecurityUtils.hashPassword(password)
                         val newUser = User(
-                            nombre = nombre,
+                            nombre = nombre, // Usamos el nombre ingresado
                             apellido = apellido,
                             password = hashedPassword,
                             lastUpdated = System.currentTimeMillis()
                         )
-                        
+
                         try {
+                            // 1. Guardar en Base de Datos Local
                             userRepository.addUser(newUser)
+
+                            // =========================================================
+                            // 2. REGISTRAR LOG EN LA NUBE (REQUERIMIENTO CUMPLIDO)
+                            // Acción: "creacion" (de usuario)
+                            // Usuario: El nombre del nuevo usuario (newUser.nombre)
+                            // =========================================================
+                            LogManager.registrarLog(context, "creacion", newUser.nombre)
+
+                            // 3. Sincronizar con el Backend (Opcional si falla, el registro local vale)
                             val response = RetrofitClient.instance.syncUser(newUser)
-                            
+
                             if (response.isSuccessful) {
                                 Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
                                 onRegisterSuccess()
@@ -130,6 +144,7 @@ fun RegisterScreen(
                                 onRegisterSuccess()
                             }
                         } catch (e: Exception) {
+                            // Si falla la red, igual se guardó localmente en el paso 1
                             Toast.makeText(context, "Registro local completado", Toast.LENGTH_LONG).show()
                             onRegisterSuccess()
                         } finally {

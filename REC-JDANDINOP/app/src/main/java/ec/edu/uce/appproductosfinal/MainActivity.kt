@@ -34,6 +34,8 @@ import ec.edu.uce.appproductosfinal.ui.register.RegisterScreen
 import ec.edu.uce.appproductosfinal.ui.theme.AppProductosTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

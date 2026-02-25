@@ -45,8 +45,9 @@ import ec.edu.uce.appproductosfinal.data.ProductRepository
 import ec.edu.uce.appproductosfinal.data.network.ProductDto
 import ec.edu.uce.appproductosfinal.data.network.RetrofitClient
 import ec.edu.uce.appproductosfinal.model.Product
+// Asegúrate de tener este import o una forma de obtener el usuario
 import ec.edu.uce.appproductosfinal.location.SharedPreferenceUtil
-import ec.edu.uce.appproductosfinal.utils.LogManager
+import ec.edu.uce.appproductosfinal.utils.LogManager // Tu Singleton
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -59,25 +60,30 @@ import java.util.*
 fun ProductScreen(
     productId: Int?,
     productRepository: ProductRepository,
-    onSave: () -> Unit
+    onSave: () -> Unit // Esta función se llama al terminar de guardar o eliminar
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    
+
+    // Obtener el usuario actual para los logs (Asegúrate de haberlo guardado en el Login)
+    val currentUser = remember { SharedPreferenceUtil.getUserSession(context) ?: "UsuarioDesconocido" }
+
     var descripcion by remember { mutableStateOf("") }
     var costo by remember { mutableStateOf("") }
     var disponibilidad by remember { mutableStateOf(true) }
     var fechaFabricacionMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var imageUri by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(productId != null) }
-    
+
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) } // Para confirmar eliminación
 
     var tempUri by remember { mutableStateOf<Uri?>(null) }
-    
+
+    // ... (El código de la cámara se mantiene igual) ...
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success -> if (success) imageUri = tempUri?.toString() }
@@ -114,6 +120,7 @@ fun ProductScreen(
         }
     }
 
+    // Diálogo de fecha
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaFabricacionMillis)
         DatePickerDialog(
@@ -127,6 +134,42 @@ fun ProductScreen(
         ) { DatePicker(state = datePickerState) }
     }
 
+    // Diálogo de Confirmación de Eliminación (NUEVO)
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Eliminar Producto") },
+            text = { Text("¿Estás seguro de eliminar este producto? Esta acción se registrará.") },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    onClick = {
+                        coroutineScope.launch {
+                            if (productId != null) {
+                                // 1. Eliminar de BD Local
+                                val productToDelete = productRepository.getProducts().find { it.id == productId }
+                                if (productToDelete != null) {
+                                    productRepository.deleteProduct(productToDelete.id)
+
+                                    // 2. REGISTRAR LOG DE ELIMINACIÓN (REQUERIMIENTO)
+                                    LogManager.registrarLog(context, "eliminacion", currentUser)
+
+                                    // Sincronización opcional de borrado en nube si tu API lo soporta
+                                    // RetrofitClient.instance.deleteProduct(productId)
+                                }
+                            }
+                            showDeleteConfirm = false
+                            onSave() // Volver atrás
+                        }
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
     val isFormValid by derivedStateOf {
         descripcion.isNotBlank() && costo.isNotBlank() && costo.toDoubleOrNull() != null
     }
@@ -135,7 +178,15 @@ fun ProductScreen(
         topBar = {
             TopAppBar(
                 title = { Text(if (productId == null) "Nuevo Producto" else "Editar Producto", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary, titleContentColor = MaterialTheme.colorScheme.onPrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary, titleContentColor = MaterialTheme.colorScheme.onPrimary),
+                actions = {
+                    // Botón de Eliminar en la barra superior (Solo si estamos editando)
+                    if (productId != null) {
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
@@ -146,6 +197,7 @@ fun ProductScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp).verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // ... (Sección de Imagen y Inputs se mantiene igual) ...
                 Box(
                     modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant).clickable {
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) openCamera()
@@ -153,6 +205,7 @@ fun ProductScreen(
                     },
                     contentAlignment = Alignment.Center
                 ) {
+                    // ... (Código de imagen igual al tuyo) ...
                     if (imageUri != null) {
                         Image(painter = rememberAsyncImagePainter(imageUri), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         Box(modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).background(MaterialTheme.colorScheme.primary, CircleShape).padding(8.dp)) {
@@ -167,27 +220,28 @@ fun ProductScreen(
                 }
 
                 OutlinedTextField(
-                    value = descripcion, 
-                    onValueChange = { descripcion = it }, 
-                    label = { Text("Descripción") }, 
-                    modifier = Modifier.fillMaxWidth(), 
-                    leadingIcon = { Icon(Icons.Default.Description, null) }, 
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Description, null) },
                     shape = RoundedCornerShape(16.dp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
-                
+
                 OutlinedTextField(
-                    value = costo, 
-                    onValueChange = { costo = it }, 
-                    label = { Text("Costo") }, 
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done), 
-                    modifier = Modifier.fillMaxWidth(), 
-                    leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, 
+                    value = costo,
+                    onValueChange = { costo = it },
+                    label = { Text("Costo") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.AttachMoney, null) },
                     shape = RoundedCornerShape(16.dp),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                 )
 
+                // ... (DatePicker y Switch se mantienen igual) ...
                 Card(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CalendarToday, null, tint = MaterialTheme.colorScheme.primary)
@@ -210,6 +264,7 @@ fun ProductScreen(
                     }
                 }
 
+                // BOTÓN GUARDAR (MODIFICADO PARA LOGS)
                 Button(
                     onClick = {
                         coroutineScope.launch {
@@ -222,18 +277,32 @@ fun ProductScreen(
                                 imageUri = imageUri,
                                 lastUpdated = System.currentTimeMillis()
                             )
-                            val finalId = if (productId == null) productRepository.addProduct(tempProduct).toInt() 
-                                          else { productRepository.updateProduct(tempProduct); productId }
-                            
-                            val currentUser = SharedPreferenceUtil.getUserSession(context) ?: "Unknown"
-                            val accion = if (productId == null) "creacion" else "actualizacion"
-                            LogManager.registrarLog(context, accion, currentUser)
 
+                            // Guardar en BD Local
+                            val finalId = if (productId == null) productRepository.addProduct(tempProduct).toInt()
+                            else { productRepository.updateProduct(tempProduct); productId }
+
+                            // ==================================================
+                            // LOGIC DE LOG (AWS DYNAMODB)
+                            // ==================================================
+
+                            // Determinamos qué acción fue
+                            val accionLog = if (productId == null) "creacion" else "actualizacion"
+
+                            // Llamamos al LogManager con el context para los Toasts
+                            LogManager.registrarLog(context, accionLog, currentUser)
+
+                            // ==================================================
+
+                            // Sincronización nube (Tu código original)
                             val finalProduct = tempProduct.copy(id = finalId)
                             try {
                                 val productDto = finalProduct.toDto(context)
                                 RetrofitClient.instance.syncProduct(productDto)
-                            } catch (e: Exception) { }
+                            } catch (e: Exception) {
+                                Log.e("Cloud", "Error sync", e)
+                            }
+
                             onSave()
                         }
                     },
@@ -250,7 +319,9 @@ fun ProductScreen(
     }
 }
 
+// Función auxiliar (se mantiene igual)
 private fun Product.toDto(context: Context): ProductDto {
+    // ... (Tu lógica de Base64 se mantiene igual) ...
     var base64: String? = null
     if (!imageUri.isNullOrEmpty() && !imageUri!!.startsWith("http")) {
         try {

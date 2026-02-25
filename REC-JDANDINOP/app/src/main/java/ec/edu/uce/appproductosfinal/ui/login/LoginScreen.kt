@@ -104,25 +104,44 @@ fun LoginScreen(
                     onClick = {
                         coroutineScope.launch {
                             isChecking = true
-                            showError = false
+                            showError = false // Reiniciamos el error al intentar de nuevo
                             val hashedPassword = SecurityUtils.hashPassword(password)
+
+                            // 1. Buscamos localmente
                             val localUser = userRepository.findUser(nombre, hashedPassword)
-                            
+
                             if (localUser != null) {
+                                // ✅ CASO 1: Usuario Local encontrado
                                 LogManager.registrarLog(context, "ingreso", localUser.nombre)
                                 onLoginSuccess(localUser.nombre)
                             } else {
+                                // 2. Si no está local, buscamos en la nube
                                 try {
                                     val response = RetrofitClient.instance.getUser(nombre)
                                     if (response.isSuccessful && response.body() != null) {
                                         val cloudUser = response.body()!!
+
+                                        // Validamos contraseña (asumiendo que viene hasheada o la comparas igual)
                                         if (cloudUser.password == hashedPassword) {
+
+                                            // Guardamos en local para la próxima vez
                                             userRepository.addUser(cloudUser)
+
+                                            // ✅ CASO 2: Usuario Nube validado (CORREGIDO)
+                                            // Usamos 'cloudUser.nombre' en lugar de 'localUser.nombre'
                                             LogManager.registrarLog(context, "ingreso", cloudUser.nombre)
+
                                             onLoginSuccess(cloudUser.nombre)
-                                        } else { showError = true }
-                                    } else { showError = true }
-                                } catch (e: Exception) { showError = true }
+                                        } else {
+                                            showError = true // Contraseña incorrecta en nube
+                                        }
+                                    } else {
+                                        showError = true // Usuario no existe en nube
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace() // Es bueno imprimir el error en consola para depurar
+                                    showError = true // Error de conexión
+                                }
                             }
                             isChecking = false
                         }
